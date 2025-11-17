@@ -38,6 +38,7 @@ static const char svg_head[] =
     "<defs><style type='text/css'><![CDATA[\n"
     "* { image-rendering: optimizeSpeed }\n"
     "image { opacity: .9 }\n"
+    "text { font-size: 200pt; }\n"
     "path, line, circle { fill: none; stroke-width: .5;"
     " stroke-linejoin: round; stroke-linecap: butt;"
     " stroke-opacity: .666; fill-opacity: .666 }\n"
@@ -55,7 +56,7 @@ static const char svg_head[] =
     ".cluster.valid { stroke: #c0a; stroke-width: 1; stroke-opacity: .666 }\n"
     ".h.cluster { marker: url(#vedge) }\n"
     ".v.cluster { marker: url(#hedge) }\n"
-    ".centers { marker: url(#target); stroke-width: 3 }\n"
+    ".centers { marker: url(#target); stroke-width: 1%; }\n"
     ".edge-pts { marker: url(#ydot); stroke-width: .5 }\n"
     ".align { marker: url(#mdot); stroke-width: 1.5 }\n"
     ".sampling-grid { stroke-width: .75; marker: url(#cross) }\n"
@@ -165,6 +166,12 @@ void svg_path_close()
     if (!svg)
 	return;
     fprintf(svg, "z");
+}
+
+void svg_text(double x, double y, char *text) {
+    if (!svg)
+	return;
+    fprintf(svg, "<text x=\"%g\" y=\"%g\" fill=\"red\">%s</text>", x, y, text);
 }
 
 void svg_path_moveto(svg_absrel_t abs, double x, double y)

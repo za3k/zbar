@@ -57,6 +57,22 @@ typedef struct qr_pack_buf qr_pack_buf;
    quadrilateral for the code.*/
 #define QR_ALIGN_SUBPREC (2)
 
+
+char nth_filename[100];
+char* nth(char* t) {
+    static int n = 0;
+    n++;
+    int i = n/3;
+    if (0 == strcmp("undistorted_hom.png", t)) {
+        sprintf(nth_filename, "undistorted_hom_%04d.png", i);
+    } else if (0 == strcmp("grid.png", t)) {
+        sprintf(nth_filename, "grid_%04d.png", i);
+    } else if (0 == strcmp("undistorted_aff.png", t)) {
+        sprintf(nth_filename, "undistorted_aff_%04d.png", i);
+    }
+    return nth_filename;
+}
+
 /* collection of finder lines */
 typedef struct qr_finder_lines {
     qr_finder_line *lines;
@@ -1506,7 +1522,7 @@ static void qr_finder_dump_aff_undistorted(qr_finder *_ul, qr_finder *_ur,
 		gimg[i * dim + j] = 0x7F;
 	}
     }
-    fout = fopen("undistorted_aff.png", "wb");
+    fout = fopen(nth("undistorted_aff.png"), "wb");
     image_write_png(gimg, dim, dim, fout);
     fclose(fout);
     free(gimg);
@@ -1598,7 +1614,7 @@ static void qr_finder_dump_hom_undistorted(qr_finder *_ul, qr_finder *_ur,
 		gimg[i * dim + j] = 0x7F;
 	}
     }
-    fout = fopen("undistorted_hom.png", "wb");
+    fout = fopen(nth("undistorted_hom.png"), "wb");
     image_write_png(gimg, dim, dim, fout);
     fclose(fout);
     free(gimg);
@@ -3071,7 +3087,7 @@ static void qr_sampling_grid_dump(qr_sampling_grid *_grid, int _version,
 		gimg[(i + 1) * dim + j + 1] = 0x7F;
 	    }
 	}
-    fout = fopen("grid.png", "wb");
+    fout = fopen(nth("grid.png"), "wb");
     image_write_png(gimg, dim, dim, fout);
     fclose(fout);
     free(gimg);
@@ -4235,6 +4251,7 @@ void qr_reader_match_centers(qr_reader *_reader, qr_code_data_list *_qrlist,
     int i;
     int j;
     int k;
+    int special = 0;
     mark	  = (unsigned char *)calloc(_ncenters, sizeof(*mark));
     nfailures_max = QR_MAXI(8192, _width * _height >> 9);
     nfailures	  = 0;
@@ -4251,10 +4268,17 @@ void qr_reader_match_centers(qr_reader *_reader, qr_code_data_list *_qrlist,
 		    c[0]    = _centers + i;
 		    c[1]    = _centers + j;
 		    c[2]    = _centers + k;
+                    zprintf(17, "(%d) Trying centers #%d, #%d, #%d:\n", nfailures, i, j, k);
+                    special = (i == 17 && j == 18 && k == 24);
+                    if (special) {
+                        zprintf(1, "(%d) TRYING CENTERS #%d, #%d, #%d:\n", nfailures, i, j, k);
+                    }
+                    zprintf(17, "(%d) Trying centers #%d, #%d, #%d:\n", nfailures, i, j, k);
 		    version = qr_reader_try_configuration(_reader, &qrdata,
 							  _img, _width, _height,
 							  c);
 		    if (version >= 0) {
+                        zprintf(16, "(%d) Success with centers #%d, #%d, #%d:\n", nfailures, i, j, k);
 			int ninside;
 			int l;
 			/*Add the data to the list.*/
@@ -4310,6 +4334,8 @@ void qr_reader_match_centers(qr_reader *_reader, qr_code_data_list *_qrlist,
             We're unlikely to find a valid code in all this clutter, and we
              could spent quite a lot of time trying.*/
 			i = j = k = _ncenters;
+
+                        zprintf(14, "gave up finding qrs after %d failures:\n", nfailures);
 		    }
 		}
 	}
@@ -4341,6 +4367,12 @@ static inline void qr_svg_centers(const qr_finder_center *centers, int ncenters)
 	svg_path_moveto(SVG_ABS, centers[i].pos[0], centers[i].pos[1]);
     svg_path_end();
 
+    char text[100];
+    for (i = 0; i < ncenters; i++) {
+        sprintf(text, "Center %d", i);
+        svg_text(centers[i].pos[0], centers[i].pos[1], text);
+    }
+
     svg_path_start("edge-pts", 1, 0, 0);
     for (i = 0; i < ncenters; i++) {
 	const qr_finder_center *cen = centers + i;
@@ -4369,6 +4401,9 @@ int _zbar_qr_decode(qr_reader *reader, zbar_image_scanner_t *iscn,
     zprintf(14, "%dx%d finders, %d centers:\n", reader->finder_lines[0].nlines,
 	    reader->finder_lines[1].nlines, ncenters);
     qr_svg_centers(centers, ncenters);
+    for (int i = 0; i < ncenters; i++) {
+        zprintf(15, "Center #%d: %d %d\n", i, centers[i].pos[0], centers[i].pos[1]);
+    }
 
     if (ncenters >= 3) {
 	void *bin = qr_binarize(img->data, img->width, img->height);

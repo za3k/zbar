@@ -37,6 +37,8 @@ void svg_close(void);
 void svg_commentf(const char *format, ...);
 void svg_image(const char *name, double width, double height);
 
+void svg_text(double x, double y, char *text);
+
 void svg_group_start(const char *cls, double rotate, double scalex,
 		     double scaley, double x, double y);
 void svg_group_end(void);
@@ -53,6 +55,8 @@ void svg_path_lineto(svg_absrel_t abs, double x, double y);
 #define svg_close(...)
 
 #define svg_image(...)
+
+#define svg_text(...)
 
 #define svg_group_start(...)
 #define svg_group_end(...)
